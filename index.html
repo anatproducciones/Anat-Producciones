@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mi Tienda</title>
+<style>
+:root{--bg:#faf8f5;--card:#fff;--tx:#1f1d1a;--mu:#6b665f;--ac:#2f6f4f;--acx:#fff;--bd:#e6e1d9;--ok:#2f6f4f;--lo:#b86a00;--no:#b3392f;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#181714;--card:#23211d;--tx:#f2eee8;--mu:#a7a198;--ac:#6fc29a;--acx:#10231a;--bd:#38352f;--ok:#6fc29a;--lo:#e8a84a;--no:#ec7d73}}
+:root[data-theme="dark"]{--bg:#181714;--card:#23211d;--tx:#f2eee8;--mu:#a7a198;--ac:#6fc29a;--acx:#10231a;--bd:#38352f;--ok:#6fc29a;--lo:#e8a84a;--no:#ec7d73}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.w{max-width:960px;margin:0 auto;padding:20px 16px 40px}
+h1{margin:0;font-size:1.6rem}
+.sub{color:var(--mu);margin:2px 0 16px}
+.bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+input,select{font:inherit;padding:10px 12px;border:1px solid var(--bd);border-radius:10px;background:var(--card);color:var(--tx)}
+#q{flex:1;min-width:180px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px}
+.c{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:6px}
+.em{font-size:2.2rem}
+.n{font-weight:600}
+.cat{color:var(--mu);font-size:.85rem}
+.p{font-size:1.25rem;font-weight:700}
+.b{font-size:.85rem;font-weight:600}
+.ok{color:var(--ok)}.lo{color:var(--lo)}.no{color:var(--no)}
+.row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:auto}
+button{font:inherit;cursor:pointer;border:0;border-radius:10px;padding:9px 14px;background:var(--ac);color:var(--acx);font-weight:600}
+button:disabled{opacity:.4;cursor:not-allowed}
+button.g{background:transparent;color:var(--tx);border:1px solid var(--bd);padding:4px 10px}
+#cart{margin-top:28px;background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:16px}
+h2{margin:0 0 10px;font-size:1.2rem}
+.l{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--bd)}
+.l span:first-child{flex:1}
+.t{display:flex;justify-content:space-between;font-size:1.2rem;font-weight:700;margin:12px 0}
+.f{display:grid;gap:8px}
+.mu{color:var(--mu)}
+</style>
+</head>
+<body>
+<div class="w">
+<h1>Mi Tienda</h1>
+<p class="sub">Elegí tus productos, mirá la disponibilidad y enviá tu pedido.</p>
+<div class="bar">
+<input id="q" type="search" placeholder="Buscar producto…">
+<select id="cat"><option value="">Todas las categorías</option></select>
+</div>
+<div class="grid" id="g"></div>
+<section id="cart">
+<h2>Tu pedido</h2>
+<div id="items"></div>
+<div class="t"><span>Total</span><span id="tot">$0</span></div>
+<div class="f">
+<input id="nom" placeholder="Tu nombre">
+<input id="nota" placeholder="Notas (entrega, horario, etc.)">
+<button id="send" disabled>Enviar pedido por WhatsApp</button>
+</div>
+</section>
+</div>
+<script>
+// ====== EDITÁ ESTO ======
+const WHATSAPP = "5491100000000"; // tu número con código de país, sin + ni espacios
+const MONEDA = "$";
+const PRODUCTOS = [
+ {id:1,nombre:"Producto de ejemplo 1",cat:"Categoría A",precio:12500,stock:20,icono:"📦"},
+ {id:2,nombre:"Producto de ejemplo 2",cat:"Categoría A",precio:8900,stock:3,icono:"🎁"},
+ {id:3,nombre:"Producto de ejemplo 3",cat:"Categoría B",precio:15200,stock:0,icono:"🛍️"},
+ {id:4,nombre:"Producto de ejemplo 4",cat:"Categoría B",precio:4300,stock:50,icono:"🧴"}
+];
+// ========================
+const $=s=>document.querySelector(s);
+const fmt=n=>MONEDA+n.toLocaleString("es-AR");
+const cart={};
+const cats=[...new Set(PRODUCTOS.map(p=>p.cat))];
+cats.forEach(c=>$("#cat").insertAdjacentHTML("beforeend",`<option>${c}</option>`));
+
+function badge(p){
+ if(p.stock<=0)return'<span class="b no">Agotado</span>';
+ if(p.stock<=5)return`<span class="b lo">¡Últimas ${p.stock} unidades!</span>`;
+ return'<span class="b ok">Disponible</span>';
+}
+function render(){
+ const q=$("#q").value.toLowerCase(),c=$("#cat").value;
+ $("#g").innerHTML=PRODUCTOS.filter(p=>p.nombre.toLowerCase().includes(q)&&(!c||p.cat===c)).map(p=>`
+ <div class="c"><div class="em">${p.icono}</div><div class="n">${p.nombre}</div><div class="cat">${p.cat}</div>
+ <div class="p">${fmt(p.precio)}</div>${badge(p)}
+ <div class="row"><button ${p.stock<=0||(cart[p.id]||0)>=p.stock?"disabled":""} onclick="add(${p.id})">Agregar</button></div></div>`).join("")||'<p class="mu">No hay productos que coincidan.</p>';
+}
+function add(id){cart[id]=(cart[id]||0)+1;draw()}
+function sub(id){cart[id]--;if(cart[id]<=0)delete cart[id];draw()}
+function draw(){
+ render();
+ const ids=Object.keys(cart);let total=0;
+ $("#items").innerHTML=ids.length?ids.map(id=>{
+  const p=PRODUCTOS.find(x=>x.id==id),q=cart[id];total+=p.precio*q;
+  return`<div class="l"><span>${p.nombre}</span><button class="g" onclick="sub(${id})">−</button><span>${q}</span><button class="g" ${q>=p.stock?"disabled":""} onclick="add(${id})">+</button><span>${fmt(p.precio*q)}</span></div>`}).join(""):'<p class="mu">Todavía no agregaste productos.</p>';
+ $("#tot").textContent=fmt(total);
+ $("#send").disabled=!ids.length;
+}
+$("#send").onclick=()=>{
+ let m="Hola, quiero hacer este pedido:\n";let total=0;
+ Object.keys(cart).forEach(id=>{const p=PRODUCTOS.find(x=>x.id==id);total+=p.precio*cart[id];m+=`• ${cart[id]} x ${p.nombre} — ${fmt(p.precio*cart[id])}\n`});
+ m+=`\nTotal: ${fmt(total)}`;
+ if($("#nom").value)m+=`\nNombre: ${$("#nom").value}`;
+ if($("#nota").value)m+=`\nNotas: ${$("#nota").value}`;
+ window.open("https://wa.me/"+WHATSAPP+"?text="+encodeURIComponent(m),"_blank");
+};
+$("#q").oninput=render;$("#cat").onchange=render;
+draw();
+</script>
+</body>
+</html>
