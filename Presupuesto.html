@@ -254,11 +254,12 @@ function draw(){
  $("#tot").textContent=fmt(tot);
  $("#send").disabled=!cart.length;
  const ph=cart.some(i=>i.f);$("#wnote").hidden=!ph;
- $("#wnote").textContent="Al presionar el botón se enviará el presupuesto con los enlaces de las imágenes por e-mail y se abrirá WhatsApp.";
+ $("#wnote").textContent="Al presionar el botón se enviará el presupuesto por e-mail y se abrirá WhatsApp con los enlaces directos a las imágenes.";
 }
 
-// Subir la imagen a un servidor público (Imgur) de forma gratuita
+// Función para subir una imagen a Imgur y retornar su link público
 async function uploadToImgur(file) {
+  if (!file) return null;
   const formData = new FormData();
   formData.append("image", file);
   try {
@@ -270,7 +271,7 @@ async function uploadToImgur(file) {
     const data = await res.json();
     return data.success ? data.data.link : null;
   } catch (e) {
-    console.error("Error al subir imagen a Imgur:", e);
+    console.error("Error al subir imagen:", e);
     return null;
   }
 }
@@ -278,27 +279,36 @@ async function uploadToImgur(file) {
 /* ---- ENVÍO DOBLE: EMAIL + WHATSAPP ---- */
 $("#send").onclick = async () => {
  $("#send").disabled = true;
- $("#send").textContent = "Subiendo fotos y procesando...";
+ $("#send").textContent = "Subiendo imágenes...";
 
- let m = "Hola, quiero este presupuesto:\n", total = 0, k = 0;
+ // 1. Subir todas las imágenes adjuntas primero
+ const cartWithLinks = await Promise.all(cart.map(async (i) => {
+   let imgUrl = null;
+   if (i.f) {
+     imgUrl = await uploadToImgur(i.f);
+   }
+   return { ...i, imgUrl };
+ }));
 
- for (const i of cart) {
+ $("#send").textContent = "Generando presupuesto...";
+
+ // 2. Construir mensaje de texto estructurado
+ let m = "Hola, quiero este presupuesto:\n\n", total = 0;
+
+ cartWithLinks.forEach(i => {
   const p = P(i.id), u = unit(i);
   total += u * i.q;
-  let ft = "";
-  if (i.f) {
-   k++;
-   const imgUrl = await uploadToImgur(i.f);
-   ft = imgUrl ? `\n   Foto: ${imgUrl}` : ` [Foto adjunta local: ${i.f.name}]`;
+  m += `• ${i.q} x ${p.nombre}${i.t ? " (" + i.t.n + ")" : ""}${i.cs.length ? " [" + i.cs.map(c => c.n).join(" + ") + "]" : ""} — ${fmt(u * i.q)}\n`;
+  if (i.imgUrl) {
+    m += `  Foto: ${i.imgUrl}\n`;
   }
-  m += `• ${i.q} x ${p.nombre}${i.t ? " — " + i.t.n : ""}${i.cs.length ? " — " + i.cs.map(c => c.n).join(" + ") : ""} — ${fmt(u * i.q)}${ft}\n`;
- }
+ });
 
  m += `\nTotal estimado: ${fmt(total)}`;
  if ($("#nom").value) m += `\nNombre: ${$("#nom").value}`;
  if ($("#nota").value) m += `\nNotas: ${$("#nota").value}`;
 
- // 1. ENVIAR CORREO MEDIANTE EMAILJS
+ // 3. ENVIAR POR EMAILJS
  try {
    const templateParams = {
      cliente_nombre: $("#nom").value || "Cliente",
@@ -308,10 +318,10 @@ $("#send").onclick = async () => {
    };
    await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams);
  } catch (err) {
-   console.error("Error al enviar el e-mail:", err);
+   console.error("Error al enviar email:", err);
  }
 
- // 2. ABRIR WHATSAPP DIRECTO AL CHAT CON LOS LINKS A LAS IMÁGENES
+ // 4. ABRIR WHATSAPP
  const waUrl = "https://wa.me/" + WHATSAPP + "?text=" + encodeURIComponent(m);
  window.open(waUrl, "_blank");
 
