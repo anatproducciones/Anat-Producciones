@@ -7,6 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<!-- SDK de EmailJS -->
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 <style>
 :root{--k:#6b0032;--p:#f3f1e7;--b:#8a0149;--y:#e6ceb3;--r:#a84d51;--bd:3px solid var(--k);--sh:6px 6px 0 var(--k);
 box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
@@ -141,10 +143,20 @@ input[type=file]{box-shadow:none;width:100%;font-size:.85rem}
 </dialog>
 
 <script>
-// ====== EDITÁ ESTO ======
-const WHATSAPP = "5491124998923"; // tu número con código de país, sin + ni espacios
-const MONEDA = "$";
+// ====== CONFIGURACIÓN ======
+const WHATSAPP = "5491124998923"; // Tu número de WhatsApp sin + ni espacios
 
+// Claves de EmailJS (Reemplazar con tus credenciales obtenidas en EmailJS.com)
+const EMAILJS_PUBLIC_KEY = "TU_PUBLIC_KEY_AQUI"; 
+const EMAILJS_SERVICE_ID = "TU_SERVICE_ID_AQUI";
+const EMAILJS_TEMPLATE_ID = "TU_TEMPLATE_ID_AQUI";
+
+// Inicializar EmailJS
+if(EMAILJS_PUBLIC_KEY !== "TU_PUBLIC_KEY_AQUI"){
+  emailjs.init(EMAILJS_PUBLIC_KEY);
+}
+
+const MONEDA = "$";
 const COLORES = [{n:"Negro",c:"#1a1a1a"},{n:"Blanco",c:"#ffffff"},{n:"Rojo",c:"#c62828"},{n:"Azul",c:"#1f3cff"}];
 const PRODUCTOS = [
  {id:1,nombre:"Producto sin pintar",cat:"Calles visibles",icono:"⬜",foto:true,medidas:{min:5,max:100,precioCm2:2.5}},
@@ -152,7 +164,8 @@ const PRODUCTOS = [
  {id:3,nombre:"Producto pintado",cat:"Pintado estandar",icono:"🎨",foto:true,colores:COLORES,medidas:{min:5,max:80,precioCm2:3}},
  {id:4,nombre:"Producto pintado",cat:"Colores especiales",icono:"✨",foto:true,colores:COLORES,medidas:{min:5,max:50,precioCm2:1.5}}
 ];
-// ========================
+// ============================
+
 const $=s=>document.querySelector(s);
 const fmt=n=>MONEDA+n.toLocaleString("es-AR");
 const cart=[];let cur=null,sel={},uid=0;
@@ -244,29 +257,67 @@ function draw(){
  $("#tot").textContent=fmt(tot);
  $("#send").disabled=!cart.length;
  const ph=cart.some(i=>i.f);$("#wnote").hidden=!ph;
- $("#wnote").textContent="Las fotos se adjuntan directamente desde el chat de WhatsApp al enviar este presupuesto.";
+ $("#wnote").textContent="Al presionar el botón se te enviará un e-mail con los detalles e imágenes adjuntas, y se abrirá el WhatsApp con la cotización.";
 }
 
-/* ---- Envío directo a tu número de WhatsApp ---- */
-$("#send").onclick=()=>{
- let m="Hola, quiero este presupuesto:\n",total=0,k=0;const nombres=[];
- cart.forEach(i=>{
-  const p=P(i.id),u=unit(i);total+=u*i.q;
-  let ft="";
-  if(i.f){
+// Función auxiliar para convertir archivos a Base64
+const fileToBase64 = file => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = error => reject(error);
+});
+
+/* ---- ENVÍO DOBLE: EMAIL + WHATSAPP ---- */
+$("#send").onclick = async () => {
+ $("#send").disabled = true;
+ $("#send").textContent = "Procesando...";
+
+ let m = "Hola, quiero este presupuesto:\n", total = 0, k = 0;
+ const imagenesBase64 = [];
+
+ for (const i of cart) {
+  const p = P(i.id), u = unit(i);
+  total += u * i.q;
+  let ft = "";
+  if (i.f) {
    k++;
-   const ext=(i.f.name.split(".").pop()||"jpg").toLowerCase(),n=`foto-${k}.${ext}`;
-   nombres.push(n);
-   ft=` [Adjunta imagen: ${n}]`;
+   ft = ` [Foto adjunta en mail #${k}]`;
+   try {
+     const b64 = await fileToBase64(i.f);
+     imagenesBase64.push({ name: `foto-${k}.jpg`, data: b64 });
+   } catch(e) { console.error("Error leyendo imagen", e); }
   }
-  m+=`• ${i.q} x ${p.nombre}${i.t?" — "+i.t.n:""}${i.cs.length?" — "+i.cs.map(c=>c.n).join(" + "):""} — ${fmt(u*i.q)}${ft}\n`;
- });
- m+=`\nTotal estimado: ${fmt(total)}`;
- if($("#nom").value)m+=`\nNombre: ${$("#nom").value}`;
- if($("#nota").value)m+=`\nNotas: ${$("#nota").value}`;
- 
- // Redirección directa y garantizada a tu WhatsApp
- window.open("https://wa.me/"+WHATSAPP+"?text="+encodeURIComponent(m),"_blank");
+  m += `• ${i.q} x ${p.nombre}${i.t ? " — " + i.t.n : ""}${i.cs.length ? " — " + i.cs.map(c => c.n).join(" + ") : ""} — ${fmt(u * i.q)}${ft}\n`;
+ }
+
+ m += `\nTotal estimado: ${fmt(total)}`;
+ if ($("#nom").value) m += `\nNombre: ${$("#nom").value}`;
+ if ($("#nota").value) m += `\nNotas: ${$("#nota").value}`;
+
+ // 1. ENVIAR CORREO POR EMAILJS SI ESTÁ CONFIGURADO
+ if(EMAILJS_PUBLIC_KEY !== "TU_PUBLIC_KEY_AQUI"){
+   try {
+     const templateParams = {
+       cliente_nombre: $("#nom").value || "Cliente",
+       pedido_detalle: m,
+       total_estimado: fmt(total),
+       notas: $("#nota").value || "Ninguna",
+       // Se envía la primera imagen como adjunto
+       content_attachment: imagenesBase64.length ? imagenesBase64[0].data : ""
+     };
+     await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams);
+   } catch (err) {
+     console.error("Error al enviar el e-mail:", err);
+   }
+ }
+
+ // 2. ABRIR CHAT DIRECTO DE WHATSAPP
+ const waUrl = "https://wa.me/" + WHATSAPP + "?text=" + encodeURIComponent(m);
+ window.open(waUrl, "_blank");
+
+ $("#send").disabled = false;
+ $("#send").textContent = "Enviar por WhatsApp →";
 };
 
 $("#q").oninput=render;$("#cat").onchange=render;
