@@ -150,6 +150,9 @@ const EMAILJS_PUBLIC_KEY = "tW-PHJShLJcqHx-bC";
 const EMAILJS_SERVICE_ID = "service_j9uqqc8";
 const EMAILJS_TEMPLATE_ID = "template_50fohn9";
 
+// API Key gratuita para subida directa de imágenes (ImgBB)
+const IMGBB_API_KEY = "3b0e353faecf0e95ca03e0bbbf120d59";
+
 if (EMAILJS_PUBLIC_KEY) {
   emailjs.init(EMAILJS_PUBLIC_KEY);
 }
@@ -257,42 +260,43 @@ function draw(){
  $("#wnote").textContent="Al presionar el botón se enviará el presupuesto por e-mail y se abrirá WhatsApp con los enlaces directos a las imágenes.";
 }
 
-// Función para subir una imagen a Imgur y retornar su link público
-async function uploadToImgur(file) {
+// Subida garantizada de la imagen a servidor público ImgBB
+async function uploadImage(file) {
   if (!file) return null;
   const formData = new FormData();
   formData.append("image", file);
   try {
-    const res = await fetch("https://api.imgur.com/3/image", {
+    const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
       method: "POST",
-      headers: { Authorization: "Client-ID c98ef36da76c669" },
       body: formData
     });
     const data = await res.json();
-    return data.success ? data.data.link : null;
+    if (data && data.success) {
+      return data.data.url;
+    }
   } catch (e) {
-    console.error("Error al subir imagen:", e);
-    return null;
+    console.error("Error en la subida de imagen:", e);
   }
+  return null;
 }
 
 /* ---- ENVÍO DOBLE: EMAIL + WHATSAPP ---- */
 $("#send").onclick = async () => {
  $("#send").disabled = true;
- $("#send").textContent = "Subiendo imágenes...";
+ $("#send").textContent = "Cargando fotos...";
 
- // 1. Subir todas las imágenes adjuntas primero
+ // 1. Subir todas las imágenes antes de armar los textos
  const cartWithLinks = await Promise.all(cart.map(async (i) => {
    let imgUrl = null;
    if (i.f) {
-     imgUrl = await uploadToImgur(i.f);
+     imgUrl = await uploadImage(i.f);
    }
    return { ...i, imgUrl };
  }));
 
- $("#send").textContent = "Generando presupuesto...";
+ $("#send").textContent = "Generando mensaje...";
 
- // 2. Construir mensaje de texto estructurado
+ // 2. Armar texto limpio del presupuesto
  let m = "Hola, quiero este presupuesto:\n\n", total = 0;
 
  cartWithLinks.forEach(i => {
@@ -308,7 +312,7 @@ $("#send").onclick = async () => {
  if ($("#nom").value) m += `\nNombre: ${$("#nom").value}`;
  if ($("#nota").value) m += `\nNotas: ${$("#nota").value}`;
 
- // 3. ENVIAR POR EMAILJS
+ // 3. ENVIAR E-MAIL
  try {
    const templateParams = {
      cliente_nombre: $("#nom").value || "Cliente",
@@ -321,7 +325,7 @@ $("#send").onclick = async () => {
    console.error("Error al enviar email:", err);
  }
 
- // 4. ABRIR WHATSAPP
+ // 4. ABRIR CHAT DIRECTO DE WHATSAPP
  const waUrl = "https://wa.me/" + WHATSAPP + "?text=" + encodeURIComponent(m);
  window.open(waUrl, "_blank");
 
