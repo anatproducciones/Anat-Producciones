@@ -296,7 +296,7 @@ $("#send").onclick = async () => {
  if ($("#nota").value) m += `\nNotas: ${$("#nota").value}`;
 
  // 1. ENVIAR CORREO POR EMAILJS SI ESTÁ CONFIGURADO
- if(EMAILJS_PUBLIC_KEY !== "TU_PUBLIC_KEY_AQUI"){
+ if(EMAILJS_PUBLIC_KEY !== "Tservice_j9uqqc8"){
    try {
      const templateParams = {
        cliente_nombre: $("#nom").value || "Cliente",
