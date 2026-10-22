@@ -150,9 +150,6 @@ const EMAILJS_PUBLIC_KEY = "tW-PHJShLJcqHx-bC";
 const EMAILJS_SERVICE_ID = "service_j9uqqc8";
 const EMAILJS_TEMPLATE_ID = "template_50fohn9";
 
-// API Key gratuita para subida directa de imágenes (ImgBB)
-const IMGBB_API_KEY = "3b0e353faecf0e95ca03e0bbbf120d59";
-
 if (EMAILJS_PUBLIC_KEY) {
   emailjs.init(EMAILJS_PUBLIC_KEY);
 }
@@ -257,62 +254,41 @@ function draw(){
  $("#tot").textContent=fmt(tot);
  $("#send").disabled=!cart.length;
  const ph=cart.some(i=>i.f);$("#wnote").hidden=!ph;
- $("#wnote").textContent="Al presionar el botón se enviará el presupuesto por e-mail y se abrirá WhatsApp con los enlaces directos a las imágenes.";
+ $("#wnote").textContent="Se enviará una copia por correo y el detalle del presupuesto por WhatsApp.";
 }
 
-// Subida garantizada de la imagen a servidor público ImgBB
-async function uploadImage(file) {
-  if (!file) return null;
-  const formData = new FormData();
-  formData.append("image", file);
-  try {
-    const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
-      method: "POST",
-      body: formData
-    });
-    const data = await res.json();
-    if (data && data.success) {
-      return data.data.url;
-    }
-  } catch (e) {
-    console.error("Error en la subida de imagen:", e);
-  }
-  return null;
-}
+// Conversión instantánea de la foto a Base64 local
+const fileToBase64 = file => new Promise((resolve) => {
+  if (!file) return resolve(null);
+  const reader = new FileReader();
+  reader.onload = () => resolve(reader.result);
+  reader.onerror = () => resolve(null);
+  reader.readAsDataURL(file);
+});
 
-/* ---- ENVÍO DOBLE: EMAIL + WHATSAPP ---- */
+/* ---- ENVÍO DE PRESUPUESTO ---- */
 $("#send").onclick = async () => {
  $("#send").disabled = true;
- $("#send").textContent = "Cargando fotos...";
+ $("#send").textContent = "Procesando...";
 
- // 1. Subir todas las imágenes antes de armar los textos
- const cartWithLinks = await Promise.all(cart.map(async (i) => {
-   let imgUrl = null;
-   if (i.f) {
-     imgUrl = await uploadImage(i.f);
-   }
-   return { ...i, imgUrl };
- }));
+ let m = "Hola, quiero este presupuesto:\n\n", total = 0, photoIndex = 0;
 
- $("#send").textContent = "Generando mensaje...";
-
- // 2. Armar texto limpio del presupuesto
- let m = "Hola, quiero este presupuesto:\n\n", total = 0;
-
- cartWithLinks.forEach(i => {
+ for (const i of cart) {
   const p = P(i.id), u = unit(i);
   total += u * i.q;
-  m += `• ${i.q} x ${p.nombre}${i.t ? " (" + i.t.n + ")" : ""}${i.cs.length ? " [" + i.cs.map(c => c.n).join(" + ") + "]" : ""} — ${fmt(u * i.q)}\n`;
-  if (i.imgUrl) {
-    m += `  Foto: ${i.imgUrl}\n`;
+  let photoNote = "";
+  if (i.f) {
+   photoIndex++;
+   photoNote = ` [Foto #${photoIndex}: ${i.f.name}]`;
   }
- });
+  m += `• ${i.q} x ${p.nombre}${i.t ? " (" + i.t.n + ")" : ""}${i.cs.length ? " [" + i.cs.map(c => c.n).join(" + ") + "]" : ""} — ${fmt(u * i.q)}${photoNote}\n`;
+ }
 
  m += `\nTotal estimado: ${fmt(total)}`;
  if ($("#nom").value) m += `\nNombre: ${$("#nom").value}`;
  if ($("#nota").value) m += `\nNotas: ${$("#nota").value}`;
 
- // 3. ENVIAR E-MAIL
+ // 1. ENVIAR E-MAIL CON DETALLES
  try {
    const templateParams = {
      cliente_nombre: $("#nom").value || "Cliente",
@@ -325,7 +301,7 @@ $("#send").onclick = async () => {
    console.error("Error al enviar email:", err);
  }
 
- // 4. ABRIR CHAT DIRECTO DE WHATSAPP
+ // 2. ABRIR WHATSAPP
  const waUrl = "https://wa.me/" + WHATSAPP + "?text=" + encodeURIComponent(m);
  window.open(waUrl, "_blank");
 
