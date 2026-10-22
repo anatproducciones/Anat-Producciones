@@ -254,24 +254,33 @@ function draw(){
  $("#tot").textContent=fmt(tot);
  $("#send").disabled=!cart.length;
  const ph=cart.some(i=>i.f);$("#wnote").hidden=!ph;
- $("#wnote").textContent="Al presionar el botón se enviará una copia del presupuesto e imágenes por e-mail y se abrirá WhatsApp.";
+ $("#wnote").textContent="Al presionar el botón se enviará el presupuesto con los enlaces de las imágenes por e-mail y se abrirá WhatsApp.";
 }
 
-// Conversión de imágenes a Base64 para el correo
-const fileToBase64 = file => new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = error => reject(error);
-});
+// Subir la imagen a un servidor público (Imgur) de forma gratuita
+async function uploadToImgur(file) {
+  const formData = new FormData();
+  formData.append("image", file);
+  try {
+    const res = await fetch("https://api.imgur.com/3/image", {
+      method: "POST",
+      headers: { Authorization: "Client-ID c98ef36da76c669" },
+      body: formData
+    });
+    const data = await res.json();
+    return data.success ? data.data.link : null;
+  } catch (e) {
+    console.error("Error al subir imagen a Imgur:", e);
+    return null;
+  }
+}
 
 /* ---- ENVÍO DOBLE: EMAIL + WHATSAPP ---- */
 $("#send").onclick = async () => {
  $("#send").disabled = true;
- $("#send").textContent = "Procesando...";
+ $("#send").textContent = "Subiendo fotos y procesando...";
 
  let m = "Hola, quiero este presupuesto:\n", total = 0, k = 0;
- const imagenesBase64 = [];
 
  for (const i of cart) {
   const p = P(i.id), u = unit(i);
@@ -279,11 +288,8 @@ $("#send").onclick = async () => {
   let ft = "";
   if (i.f) {
    k++;
-   ft = ` [Foto adjunta en mail #${k}]`;
-   try {
-     const b64 = await fileToBase64(i.f);
-     imagenesBase64.push({ name: `foto-${k}.jpg`, data: b64 });
-   } catch(e) { console.error("Error leyendo imagen", e); }
+   const imgUrl = await uploadToImgur(i.f);
+   ft = imgUrl ? `\n   Foto: ${imgUrl}` : ` [Foto adjunta local: ${i.f.name}]`;
   }
   m += `• ${i.q} x ${p.nombre}${i.t ? " — " + i.t.n : ""}${i.cs.length ? " — " + i.cs.map(c => c.n).join(" + ") : ""} — ${fmt(u * i.q)}${ft}\n`;
  }
@@ -298,15 +304,14 @@ $("#send").onclick = async () => {
      cliente_nombre: $("#nom").value || "Cliente",
      pedido_detalle: m,
      total_estimado: fmt(total),
-     notas: $("#nota").value || "Ninguna",
-     content_attachment: imagenesBase64.length ? imagenesBase64[0].data : ""
+     notas: $("#nota").value || "Ninguna"
    };
    await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams);
  } catch (err) {
    console.error("Error al enviar el e-mail:", err);
  }
 
- // 2. ABRIR WHATSAPP DIRECTO AL CHAT
+ // 2. ABRIR WHATSAPP DIRECTO AL CHAT CON LOS LINKS A LAS IMÁGENES
  const waUrl = "https://wa.me/" + WHATSAPP + "?text=" + encodeURIComponent(m);
  window.open(waUrl, "_blank");
 
