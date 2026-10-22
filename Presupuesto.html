@@ -144,15 +144,13 @@ input[type=file]{box-shadow:none;width:100%;font-size:.85rem}
 
 <script>
 // ====== CONFIGURACIÓN ======
-const WHATSAPP = "5491124998923"; // Tu número de WhatsApp sin + ni espacios
+const WHATSAPP = "5491124998923"; 
 
-// Claves de EmailJS (Reemplazar con tus credenciales obtenidas en EmailJS.com)
-const EMAILJS_PUBLIC_KEY = "TU_PUBLIC_KEY_AQUI"; 
-const EMAILJS_SERVICE_ID = "TU_SERVICE_ID_AQUI";
-const EMAILJS_TEMPLATE_ID = "TU_TEMPLATE_ID_AQUI";
+const EMAILJS_PUBLIC_KEY = "tW-PHJShLJcqHx-bC"; 
+const EMAILJS_SERVICE_ID = "service_j9uqqc8";
+const EMAILJS_TEMPLATE_ID = "template_50fohn9";
 
-// Inicializar EmailJS
-if(EMAILJS_PUBLIC_KEY !== "TU_PUBLIC_KEY_AQUI"){
+if (EMAILJS_PUBLIC_KEY) {
   emailjs.init(EMAILJS_PUBLIC_KEY);
 }
 
@@ -164,7 +162,6 @@ const PRODUCTOS = [
  {id:3,nombre:"Producto pintado",cat:"Pintado estandar",icono:"🎨",foto:true,colores:COLORES,medidas:{min:5,max:80,precioCm2:3}},
  {id:4,nombre:"Producto pintado",cat:"Colores especiales",icono:"✨",foto:true,colores:COLORES,medidas:{min:5,max:50,precioCm2:1.5}}
 ];
-// ============================
 
 const $=s=>document.querySelector(s);
 const fmt=n=>MONEDA+n.toLocaleString("es-AR");
@@ -257,10 +254,10 @@ function draw(){
  $("#tot").textContent=fmt(tot);
  $("#send").disabled=!cart.length;
  const ph=cart.some(i=>i.f);$("#wnote").hidden=!ph;
- $("#wnote").textContent="Al presionar el botón se te enviará un e-mail con los detalles e imágenes adjuntas, y se abrirá el WhatsApp con la cotización.";
+ $("#wnote").textContent="Al presionar el botón se enviará una copia del presupuesto e imágenes por e-mail y se abrirá WhatsApp.";
 }
 
-// Función auxiliar para convertir archivos a Base64
+// Conversión de imágenes a Base64 para el correo
 const fileToBase64 = file => new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.readAsDataURL(file);
@@ -295,24 +292,21 @@ $("#send").onclick = async () => {
  if ($("#nom").value) m += `\nNombre: ${$("#nom").value}`;
  if ($("#nota").value) m += `\nNotas: ${$("#nota").value}`;
 
- // 1. ENVIAR CORREO POR EMAILJS SI ESTÁ CONFIGURADO
- if(EMAILJS_PUBLIC_KEY !== "Tservice_j9uqqc8"){
-   try {
-     const templateParams = {
-       cliente_nombre: $("#nom").value || "Cliente",
-       pedido_detalle: m,
-       total_estimado: fmt(total),
-       notas: $("#nota").value || "Ninguna",
-       // Se envía la primera imagen como adjunto
-       content_attachment: imagenesBase64.length ? imagenesBase64[0].data : ""
-     };
-     await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams);
-   } catch (err) {
-     console.error("Error al enviar el e-mail:", err);
-   }
+ // 1. ENVIAR CORREO MEDIANTE EMAILJS
+ try {
+   const templateParams = {
+     cliente_nombre: $("#nom").value || "Cliente",
+     pedido_detalle: m,
+     total_estimado: fmt(total),
+     notas: $("#nota").value || "Ninguna",
+     content_attachment: imagenesBase64.length ? imagenesBase64[0].data : ""
+   };
+   await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams);
+ } catch (err) {
+   console.error("Error al enviar el e-mail:", err);
  }
 
- // 2. ABRIR CHAT DIRECTO DE WHATSAPP
+ // 2. ABRIR WHATSAPP DIRECTO AL CHAT
  const waUrl = "https://wa.me/" + WHATSAPP + "?text=" + encodeURIComponent(m);
  window.open(waUrl, "_blank");
 
