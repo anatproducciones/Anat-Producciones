@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Armá tu presupuesto</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--k:#6b0032;--p:#f3f1e7;--b:#8a0149;--y:#e6ceb3;--r:#a84d51;--bd:3px solid var(--k);--sh:6px 6px 0 var(--k);
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+*{box-sizing:border-box}
+body{margin:0;background:var(--p);color:var(--k);font:16px/1.5 "Space Mono",ui-monospace,Menlo,Consolas,monospace;overflow-x:hidden;
+background-image:linear-gradient(#6b00321f 1px,transparent 1px),linear-gradient(90deg,#6b00321f 1px,transparent 1px);background-size:44px 44px}
+.d{font-family:"Archivo Black","Arial Black",Impact,sans-serif;text-transform:uppercase;letter-spacing:-.02em;line-height:.95}
+.top{display:flex;justify-content:space-between;background:var(--k);color:var(--p);border-bottom:var(--bd)}
+.top b{padding:12px 16px;text-decoration:none;color:inherit}
+.top a{background:var(--r);color:#fff;text-decoration:none;padding:12px 16px;font-weight:700;font-size:.85rem;display:flex;align-items:center}
+.top a:hover{background:var(--y);color:var(--k)}
+.w{max-width:1080px;margin:0 auto;padding:30px 18px 56px}
+h1{margin:0 0 12px;font-size:clamp(1.8rem,8.6vw,4.6rem)}
+h1 .hl{white-space:nowrap;background:var(--y);padding:0 .12em;border:var(--bd);box-shadow:var(--sh);display:inline-block;transform:rotate(-1.5deg)}
+.sub{margin:18px 0 22px;max-width:36em}
+.bar{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:26px}
+input,select{font:inherit;color:var(--k);background:#fff;border:var(--bd);padding:11px 12px;border-radius:0;box-shadow:4px 4px 0 var(--k)}
+input:focus-visible,select:focus-visible{outline:3px solid var(--b);outline-offset:2px}
+#q{flex:1;min-width:190px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:24px}
+.pc{background:var(--p);border:var(--bd);box-shadow:var(--sh);padding:14px;display:flex;flex-direction:column;gap:8px}
+.pc:nth-child(even){background:var(--y)}
+.pc.off{opacity:.7}
+.hd{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.tag{background:var(--k);color:var(--y);font-size:.72rem;font-weight:700;padding:3px 8px;letter-spacing:.05em;text-transform:uppercase}
+.ic{font-size:2rem;line-height:1;background:#fff;border:var(--bd);padding:6px 8px}
+.pc h3{margin:6px 0 0;font-size:1.35rem}
+.price{font-size:1.9rem}
+.st{align-self:flex-start;font-size:.78rem;font-weight:700;padding:3px 9px;border:2px solid var(--k);text-transform:uppercase;letter-spacing:.04em}
+.st.ok{background:var(--k);color:var(--y)}
+.st.lo{background:var(--r);color:#fff}
+.st.no{background:#fff;border-style:dashed}
+.btn{font:inherit;font-weight:700;text-transform:uppercase;cursor:pointer;background:var(--b);color:#fff;border:var(--bd);box-shadow:4px 4px 0 var(--k);padding:11px 14px;transition:transform .12s,box-shadow .12s,background .12s}
+.btn:hover:not(:disabled),.btn:focus-visible:not(:disabled){transform:translate(2px,2px);box-shadow:2px 2px 0 var(--k);background:var(--r)}
+.btn:focus-visible{outline:3px solid var(--k);outline-offset:3px}
+.btn:disabled{background:var(--p);color:var(--k);opacity:.45;cursor:not-allowed;box-shadow:none}
+.pc .btn{margin-top:auto}
+.sm{padding:2px 11px;background:var(--p);color:var(--k);box-shadow:2px 2px 0 var(--k)}
+.none{grid-column:1/-1;font-weight:700}
+
+#cart{margin-top:44px;background:var(--y);border:var(--bd);box-shadow:8px 8px 0 var(--k);padding:20px}
+#cart h2{margin:0 0 14px;font-size:clamp(1.6rem,6vw,2.6rem)}
+.l{display:flex;align-items:center;flex-wrap:wrap;gap:10px;padding:10px 0;border-bottom:2px dashed var(--k)}
+.l .nm{flex:1 1 140px;font-weight:700}
+.l .pr{min-width:84px;text-align:right;font-weight:700}
+.empty{margin:0 0 6px}
+.t{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin:16px 0}
+.t span:first-child{font-size:1.1rem}
+.t span:last-child{font-size:clamp(1.8rem,7vw,2.8rem)}
+.f{display:grid;gap:12px}
+#send{width:100%;font-family:"Archivo Black","Arial Black",Impact,sans-serif;font-size:1.1rem;padding:16px}
+.note{margin:16px 0 0;font-size:.8rem}
+@media(prefers-reduced-motion:reduce){.btn{transition:none}}
+
+dialog{border:var(--bd);box-shadow:10px 10px 0 var(--k);background:var(--p);color:var(--k);padding:0;width:min(520px,calc(100% - 28px));max-height:calc(100dvh - 28px);font:inherit;overflow:hidden}
+dialog[open]{display:flex;flex-direction:column}
+dialog::backdrop{background:#6b0032b3}
+.dh{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;background:var(--k);color:var(--y);padding:12px 14px}
+.dh h3{margin:0;font-size:1.3rem}
+.x{background:var(--y);color:var(--k);border:0;font:inherit;font-weight:700;cursor:pointer;padding:2px 10px;font-size:1.1rem}
+.db{padding:14px;display:grid;gap:18px;overflow:auto}
+.lb{font-weight:700;text-transform:uppercase;font-size:.8rem;letter-spacing:.05em;display:block;margin-bottom:8px}
+.chips{display:flex;flex-wrap:wrap;gap:10px}
+.chip{font:inherit;cursor:pointer;background:#fff;color:var(--k);border:var(--bd);padding:8px 12px;font-weight:700;text-align:left}
+.chip small{display:block;font-weight:400}
+.chip[aria-pressed=true]{background:var(--b);color:#fff;box-shadow:3px 3px 0 var(--k)}
+.ph{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.ph img{width:84px;height:84px;object-fit:cover;border:var(--bd);background:#fff}
+input[type=file]{box-shadow:none;width:100%;font-size:.85rem}
+.df{padding:14px;border-top:var(--bd);display:grid;gap:10px;background:var(--y)}
+.df .t{margin:0}
+.faltan{font-weight:700;font-size:.9rem}
+.th{width:44px;height:44px;object-fit:cover;border:2px solid var(--k)}
+.l small{font-weight:400}
+#dsz input{width:120px}
+.fnote{margin:8px 0 0;font-size:.8rem}
+#marea{margin:4px 0 0;min-height:1.4em}
+.sw{display:inline-block;width:14px;height:14px;border:2px solid var(--k);vertical-align:-2px;margin-right:6px}
+[hidden]{display:none!important}
+#cpick{width:64px;height:44px;padding:2px;cursor:pointer}
+.pill{display:inline-flex;align-items:center;gap:6px;border:var(--bd);background:#fff;padding:3px 8px;font-size:.85rem;font-weight:700}
+.pk{border:0;background:transparent;color:var(--k);font:inherit;cursor:pointer;padding:0 2px}
+</style>
+</head>
+<body>
+
+<header class="top">
+<b class="d">Anat Producciones</b>
+<a href="index.html">← INICIO</a>
+</header>
+
+<main class="w">
+<h1 class="d">Armá tu<br><span class="hl">presupuesto.</span></h1>
+<p class="sub">Elegí tu producto, configurá medida, color y foto, y enviá tu presupuesto estimado.</p>
+
+<div class="bar">
+<input id="q" type="search" placeholder="Buscar producto…" aria-label="Buscar producto">
+<select id="cat" aria-label="Categoría"><option value="">Todas las categorías</option></select>
+</div>
+
+<div class="grid" id="g"></div>
+
+<section id="cart">
+<h2 class="d">Tu presupuesto</h2>
+<div id="items"></div>
+<div class="t"><span class="d">Total estimado</span><span class="d" id="tot">$0</span></div>
+<div class="f">
+<input id="nom" placeholder="Tu nombre">
+<input id="nota" placeholder="Notas (entrega, horario, etc.)">
+<button class="btn" id="send" disabled>Enviar por WhatsApp →</button>
+<p class="note" id="wnote" hidden></p>
+</div>
+<p class="note">Los valores son estimados y se confirman al coordinar el pedido.</p>
+</section>
+</main>
+
+<dialog id="dlg" aria-labelledby="dt">
+<div class="dh"><h3 class="d" id="dt"></h3><button class="x" id="dx" aria-label="Cerrar">✕</button></div>
+<div class="db">
+<div id="dsz"><span class="lb">Elegí la medida (cm)</span>
+<div class="ph"><label>Ancho<br><input id="mw" type="number" inputmode="decimal" min="1" step="0.1" placeholder="Ej: 20"></label><span class="d">×</span><label>Alto<br><input id="mh" type="number" inputmode="decimal" min="1" step="0.1" placeholder="Ej: 30"></label></div>
+<p class="fnote" id="mhint"></p><p class="faltan" id="marea"></p></div>
+<div id="dco"><span class="lb">Elegí tus colores (podés elegir más de uno)</span>
+<div class="chips"><button type="button" class="chip" id="mstd" aria-pressed="true" onclick="setMode('std')">Color estándar</button><button type="button" class="chip" id="mcus" aria-pressed="false" onclick="setMode('cus')">Color personalizado</button></div>
+<div class="chips" id="cchips" style="margin-top:10px"></div>
+<div class="ph" id="ccus" style="margin-top:10px" hidden><input type="color" id="cpick" value="#8a0149" aria-label="Elegir un color"><button type="button" class="btn sm" onclick="addCustom()">Agregar este color</button></div>
+<div class="chips" id="csel" style="margin-top:10px"></div></div>
+<div id="dph"><span class="lb">Adjuntá tu foto</span><div class="ph"><input type="file" id="file" accept="image/*"><img id="prev" alt="Vista previa de tu foto" hidden><button class="btn sm" id="phx" hidden>Quitar foto</button></div></div>
+<div><span class="lb">Cantidad</span><div class="ph"><button class="btn sm" id="dm">−</button><b id="dq">1</b><button class="btn sm" id="dp">+</button></div></div>
+</div>
+<div class="df"><div class="faltan" id="falta"></div><div class="t"><span class="d">Subtotal</span><span class="d" id="dsub"></span></div><button class="btn" id="dadd" disabled>Agregar al pedido</button></div>
+</dialog>
+
+<script>
+// ====== EDITÁ ESTO ======
+const WHATSAPP = "5491124998923"; // tu número con código de país, sin + ni espacios
+const MONEDA = "$";
+
+const COLORES = [{n:"Negro",c:"#1a1a1a"},{n:"Blanco",c:"#ffffff"},{n:"Rojo",c:"#c62828"},{n:"Azul",c:"#1f3cff"}];
+const PRODUCTOS = [
+ {id:1,nombre:"Producto sin pintar",cat:"Calles visibles",icono:"⬜",foto:true,medidas:{min:5,max:100,precioCm2:2.5}},
+ {id:2,nombre:"Producto con enduido",cat:"Sin calles",icono:"🎨",foto:true,medidas:{min:5,max:60,precioCm2:4}},
+ {id:3,nombre:"Producto pintado",cat:"Pintado estandar",icono:"🎨",foto:true,colores:COLORES,medidas:{min:5,max:80,precioCm2:3}},
+ {id:4,nombre:"Producto pintado",cat:"Colores especiales",icono:"✨",foto:true,colores:COLORES,medidas:{min:5,max:50,precioCm2:1.5}}
+];
+// ========================
+const $=s=>document.querySelector(s);
+const fmt=n=>MONEDA+n.toLocaleString("es-AR");
+const cart=[];let cur=null,sel={},uid=0;
+const P=id=>PRODUCTOS.find(p=>p.id==id);
+const unit=i=>i.t?i.t.precio:P(i.id).precio;
+[...new Set(PRODUCTOS.map(p=>p.cat))].forEach(c=>$("#cat").insertAdjacentHTML("beforeend",`<option>${c}</option>`));
+
+function desde(p){return p.medidas?fmt(p.medidas.precioCm2)+" / cm²":fmt(p.precio)}
+function render(){
+ const q=$("#q").value.toLowerCase(),c=$("#cat").value;
+ const list=PRODUCTOS.filter(p=>p.nombre.toLowerCase().includes(q)&&(!c||p.cat===c));
+ $("#g").innerHTML=list.map(p=>`
+ <article class="pc">
+  <div class="hd"><span class="tag">${p.cat}</span><span class="ic">${p.icono}</span></div>
+  <h3 class="d">${p.nombre}</h3>
+  <div class="price d">${desde(p)}</div>
+  <button class="btn" onclick="openD(${p.id})">Elegir opciones</button>
+ </article>`).join("")||'<p class="none">No hay productos que coincidan.</p>';
+}
+
+/* ---- panel de opciones ---- */
+function openD(id){
+ cur=P(id);sel={t:null,f:null,cs:[],url:null,q:1};
+ $("#dt").textContent=cur.nombre;
+ const M=cur.medidas;$("#dsz").hidden=!M;
+ if(M){$("#mw").value="";$("#mh").value="";$("#mhint").textContent=`Entre ${M.min} y ${M.max} cm por lado · ${fmt(M.precioCm2)} por cm²`}
+ const C=cur.colores||[];$("#dco").hidden=!C.length;
+ $("#cchips").innerHTML=C.map((c,i)=>`<button type="button" class="chip" aria-pressed="false" onclick="toggleC(${i})"><span class="sw" style="background:${c.c}"></span>${c.n}</button>`).join("");
+ setMode("std");renderSel();
+ $("#dph").hidden=!cur.foto;$("#file").value="";$("#prev").hidden=true;$("#phx").hidden=true;
+ $("#dlg").showModal();upd();
+}
+function sync(){document.querySelectorAll("#cchips .chip").forEach((b,j)=>b.setAttribute("aria-pressed",sel.cs.some(x=>x.n===cur.colores[j].n)))}
+function renderSel(){$("#csel").innerHTML=sel.cs.length?sel.cs.map((c,i)=>`<span class="pill"><span class="sw" style="background:${c.c}"></span>${c.n}<button type="button" class="pk" aria-label="Quitar ${c.n}" onclick="delC(${i})">✕</button></span>`).join(""):'<span class="fnote">Todavía no elegiste colores.</span>'}
+function toggleC(i){const c=cur.colores[i],k=sel.cs.findIndex(x=>x.n===c.n);if(k>=0)sel.cs.splice(k,1);else sel.cs.push(c);sync();renderSel();upd()}
+function delC(i){sel.cs.splice(i,1);sync();renderSel();upd()}
+function addCustom(){const v=$("#cpick").value.toUpperCase(),n="Personalizado "+v;if(!sel.cs.some(x=>x.n===n))sel.cs.push({n,c:v});renderSel();upd()}
+function setMode(m){$("#cchips").hidden=m!=="std";$("#ccus").hidden=m!=="cus";$("#mstd").setAttribute("aria-pressed",m==="std");$("#mcus").setAttribute("aria-pressed",m==="cus")}
+function upd(){
+ const f=[],M=cur.medidas;sel.t=null;
+ if(M){
+  $("#marea").textContent="";
+  const w=parseFloat($("#mw").value),h=parseFloat($("#mh").value),ok=v=>v>=M.min&&v<=M.max;
+  if(!(w>0)||!(h>0))f.push("indicar ancho y alto");
+  else if(!ok(w)||!ok(h))f.push(`usar medidas entre ${M.min} y ${M.max} cm`);
+  else{sel.t={n:`${w}×${h} cm`,precio:Math.round(w*h*M.precioCm2)};
+   $("#marea").textContent=`${w} × ${h} cm = ${(Math.round(w*h*100)/100).toLocaleString("es-AR")} cm²`}
+ }
+ if((cur.colores||[]).length&&!sel.cs.length)f.push("elegir al menos un color");
+ if(cur.foto&&!sel.f)f.push("adjuntar tu foto");
+ sel.q=Math.max(1,sel.q);
+ const pu=sel.t?sel.t.precio:cur.precio;
+ $("#dq").textContent=sel.q;
+ $("#dsub").textContent=pu!=null?fmt(pu*sel.q):"—";
+ $("#falta").textContent=f.length?"Falta: "+f.join(" y "):"¡Todo listo!";
+ $("#dadd").disabled=f.length>0;
+ $("#dm").disabled=sel.q<=1;
+}
+$("#mw").oninput=$("#mh").oninput=upd;
+$("#dm").onclick=()=>{sel.q--;upd()};
+$("#dp").onclick=()=>{sel.q++;upd()};
+$("#dx").onclick=()=>$("#dlg").close();
+$("#dlg").onclick=e=>{if(e.target===$("#dlg"))$("#dlg").close()};
+$("#dlg").onclose=()=>{if(sel.url)URL.revokeObjectURL(sel.url);sel.url=null};
+$("#file").onchange=e=>{
+ const f=e.target.files[0];
+ if(sel.url)URL.revokeObjectURL(sel.url);
+ sel.url=null;sel.f=null;
+ if(f&&f.type.startsWith("image/")){sel.f=f;sel.url=URL.createObjectURL(f);$("#prev").src=sel.url}
+ $("#prev").hidden=!sel.url;$("#phx").hidden=!sel.url;upd();
+};
+$("#phx").onclick=()=>{$("#file").value="";$("#file").onchange({target:$("#file")})};
+$("#dadd").onclick=()=>{
+ cart.push({u:++uid,id:cur.id,t:sel.t,cs:sel.cs.slice(),q:sel.q,f:sel.f,url:sel.url});
+ sel.url=null;$("#dlg").close();draw();
+};
+
+/* ---- pedido ---- */
+function qty(u,d){
+ const i=cart.find(x=>x.u===u);i.q+=d;
+ if(i.q<=0){if(i.url)URL.revokeObjectURL(i.url);cart.splice(cart.indexOf(i),1)}
+ draw();
+}
+function draw(){
+ render();let tot=0;
+ $("#items").innerHTML=cart.length?cart.map(i=>{
+  const p=P(i.id),u=unit(i);tot+=u*i.q;
+  return`<div class="l">${i.url?`<img class="th" src="${i.url}" alt="Tu foto">`:""}<span class="nm">${p.nombre}${i.t||i.cs.length?`<br><small>${[i.t&&i.t.n,i.cs.length&&i.cs.map(c=>c.n).join(", ")].filter(Boolean).join(" · ")}</small>`:""}</span><button class="btn sm" aria-label="Quitar uno" onclick="qty(${i.u},-1)">−</button><span>${i.q}</span><button class="btn sm" aria-label="Agregar uno" onclick="qty(${i.u},1)">+</button><span class="pr">${fmt(u*i.q)}</span></div>`}).join(""):'<p class="empty">Todavía no agregaste productos.</p>';
+ $("#tot").textContent=fmt(tot);
+ $("#send").disabled=!cart.length;
+ const ph=cart.some(i=>i.f);$("#wnote").hidden=!ph;
+ $("#wnote").textContent="Las fotos se adjuntan directamente desde el chat de WhatsApp al enviar este presupuesto.";
+}
+
+/* ---- Envío directo a tu número de WhatsApp ---- */
+$("#send").onclick=()=>{
+ let m="Hola, quiero este presupuesto:\n",total=0,k=0;const nombres=[];
+ cart.forEach(i=>{
+  const p=P(i.id),u=unit(i);total+=u*i.q;
+  let ft="";
+  if(i.f){
+   k++;
+   const ext=(i.f.name.split(".").pop()||"jpg").toLowerCase(),n=`foto-${k}.${ext}`;
+   nombres.push(n);
+   ft=` [Adjunta imagen: ${n}]`;
+  }
+  m+=`• ${i.q} x ${p.nombre}${i.t?" — "+i.t.n:""}${i.cs.length?" — "+i.cs.map(c=>c.n).join(" + "):""} — ${fmt(u*i.q)}${ft}\n`;
+ });
+ m+=`\nTotal estimado: ${fmt(total)}`;
+ if($("#nom").value)m+=`\nNombre: ${$("#nom").value}`;
+ if($("#nota").value)m+=`\nNotas: ${$("#nota").value}`;
+ 
+ // Redirección directa y garantizada a tu WhatsApp
+ window.open("https://wa.me/"+WHATSAPP+"?text="+encodeURIComponent(m),"_blank");
+};
+
+$("#q").oninput=render;$("#cat").onchange=render;
+draw();
+</script>
+</body>
+</html>
